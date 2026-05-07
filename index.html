@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ASISTO — Eficiencia Robótica para la Salud Pública</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --turquoise: #14b8a6;
+    --turquoise-deep: #0d9488;
+    --turquoise-darker: #0f766e;
+    --turquoise-light: #5eead4;
+    --turquoise-pale: #ccfbf1;
+    --turquoise-mist: #f0fdfa;
+
+    --ink: #0f172a;
+    --ink-soft: #475569;
+    --ink-mute: #94a3b8;
+    --ink-faint: #cbd5e1;
+    --line: #e2e8f0;
+    --line-soft: #f1f5f9;
+    --bg: #ffffff;
+
+    --azul: #2563eb;
+    --azul-soft: #dbeafe;
+    --verde: #16a34a;
+    --verde-soft: #dcfce7;
+    --amarillo: #eab308;
+    --amarillo-soft: #fef9c3;
+    --naranja: #ea580c;
+    --naranja-soft: #ffedd5;
+    --rojo: #dc2626;
+    --rojo-soft: #fee2e2;
+
+    --serif: "Instrument Serif", Georgia, serif;
+    --sans: "Manrope", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--bg);
+    overflow: hidden;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* atmosphere */
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(94, 234, 212, 0.18), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 100% 100%, rgba(20, 184, 166, 0.08), transparent 60%),
+      radial-gradient(ellipse 50% 50% at 0% 90%, rgba(94, 234, 212, 0.06), transparent 70%);
+    pointer-events: none; z-index: 0;
+    transition: background 0.8s ease;
+  }
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(20, 184, 166, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20, 184, 166, 0.04) 1px, transparent 1px);
+    background-size: 56px 56px;
+    pointer-events: none; z-index: 0;
+    mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 0%, transparent 80%);
+  }
+
+  body[data-result="azul"]::before {
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(37, 99, 235, 0.12), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 100% 100%, rgba(37, 99, 235, 0.06), transparent 60%);
+  }
+  body[data-result="verde"]::before {
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(22, 163, 74, 0.12), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 100% 100%, rgba(22, 163, 74, 0.06), transparent 60%);
+  }
+  body[data-result="amarillo"]::before {
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(234, 179, 8, 0.14), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 100% 100%, rgba(234, 179, 8, 0.06), transparent 60%);
+  }
+  body[data-result="naranja"]::before {
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(234, 88, 12, 0.16), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 100% 100%, rgba(234, 88, 12, 0.08), transparent 60%);
+  }
+  body[data-result="rojo"]::before {
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(220, 38, 38, 0.18), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 100% 100%, rgba(220, 38, 38, 0.10), transparent 60%);
+  }
+
+  #app { position: relative; z-index: 1; width: 100vw; height: 100vh; overflow: hidden; }
+
+  /* topbar */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 40px; z-index: 100;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand-mark {
+    width: 36px; height: 36px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--turquoise), var(--turquoise-deep));
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 20px rgba(20, 184, 166, 0.3);
+    position: relative;
+  }
+  .brand-mark::after {
+    content: ""; position: absolute; inset: 1px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+  }
+  .brand-mark svg { width: 20px; height: 20px; position: relative; z-index: 1; }
+  .brand-text { display: flex; flex-direction: column; line-height: 1; }
+  .brand-name {
+    font-family: var(--serif);
+    font-size: 22px; letter-spacing: 0.5px;
+  }
+  .brand-name em { color: var(--turquoise-deep); font-style: italic; }
+  .brand-sub {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .topbar-right { display: flex; align-items: center; gap: 24px; }
+  .topbar-meta {
+    font-size: 11px; color: var(--ink-mute);
+    font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase;
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--mono);
+  }
+  .topbar-meta .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--turquoise);
+    box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.7);
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot {
+    0% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.5); }
+    70% { box-shadow: 0 0 0 10px rgba(20, 184, 166, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0); }
+  }
+
+  /* screen base */
+  .screen {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 90px 40px 40px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.6s ease;
+  }
+  .screen.active { opacity: 1; pointer-events: auto; }
+
+  /* button */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 12px;
+    padding: 18px 36px;
+    background: var(--turquoise);
+    color: white; border: none;
+    border-radius: 999px;
+    font-family: var(--sans);
+    font-size: 14px; font-weight: 600;
+    letter-spacing: 0.6px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 12px 28px rgba(20, 184, 166, 0.3),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+    position: relative; overflow: hidden;
+    text-transform: uppercase;
+  }
+  .btn::before {
+    content: "";
+    position: absolute; top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.6s ease;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 16px 36px rgba(20, 184, 166, 0.4); }
+  .btn:hover::before { left: 100%; }
+  .btn:active { transform: translateY(0); }
+  .btn-ghost {
+    background: transparent; color: var(--ink-soft);
+    box-shadow: none; border: 1px solid var(--line);
+  }
+  .btn-ghost:hover {
+    background: var(--turquoise-mist);
+    color: var(--turquoise-deep);
+    border-color: var(--turquoise-light);
+    box-shadow: none;
+  }
+  .btn svg { width: 16px; height: 16px; }
+
+  .eyebrow {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--turquoise-deep);
+    margin-bottom: 18px;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .eyebrow::before {
+    content: ""; width: 24px; height: 1px; background: var(--turquoise);
+  }
+
+  /* ===== SCREEN 1: WELCOME ===== */
+  #screen-welcome { flex-direction: column; }
+  .welcome-content {
+    text-align: center; max-width: 700px; position: relative;
+  }
+  .welcome-mark-wrap {
+    width: 100px; height: 100px;
+    margin: 0 auto 36px;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .welcome-mark-wrap::before, .welcome-mark-wrap::after {
+    content: ""; position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 1px solid var(--turquoise);
+    opacity: 0;
+    animation: ripple 3.5s infinite ease-out;
+  }
+  .welcome-mark-wrap::after { animation-delay: 1.75s; }
+  @keyframes ripple {
+    0% { transform: scale(0.6); opacity: 0.6; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+  .welcome-mark-inner {
+    width: 64px; height: 64px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, var(--turquoise), var(--turquoise-deep));
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 16px 40px rgba(20, 184, 166, 0.35);
+    position: relative;
+  }
+  .welcome-mark-inner svg { width: 36px; height: 36px; }
+  .welcome-title {
+    font-family: var(--serif);
+    font-size: clamp(60px, 8vw, 104px);
+    line-height: 0.95; font-weight: 400;
+    letter-spacing: -2px;
+    margin-bottom: 20px;
+    color: var(--ink);
+  }
+  .welcome-title em {
+    font-style: italic;
+    color: var(--turquoise-deep);
+    font-weight: 400;
+  }
+  .welcome-tagline {
+    font-size: 18px; color: var(--ink-soft);
+    margin-bottom: 12px;
+    font-weight: 300; letter-spacing: 0.2px;
+    line-height: 1.5;
+  }
+  .welcome-tagline strong { font-weight: 600; color: var(--ink); }
+  .welcome-features {
+    display: flex; justify-content: center; flex-wrap: wrap;
+    gap: 28px;
+    margin: 40px 0 48px;
+    font-size: 11px; color: var(--ink-mute);
+    font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase;
+    font-family: var(--mono);
+  }
+  .welcome-features span {
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .welcome-features span::before {
+    content: ""; width: 5px; height: 5px;
+    border-radius: 50%; background: var(--turquoise);
+  }
+
+  /* ===== SCREEN 2: CONNECTING ===== */
+  .connect-content { text-align: center; max-width: 480px; }
+  .wifi-animation {
+    width: 240px; height: 240px;
+    margin: 0 auto 48px;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .wifi-arc {
+    position: absolute;
+    border: 2px solid var(--turquoise);
+    border-radius: 50%;
+    opacity: 0;
+    border-bottom-color: transparent;
+    border-left-color: transparent;
+    border-right-color: transparent;
+    transform: rotate(-90deg);
+    animation: wifi-wave 2.4s infinite ease-out;
+  }
+  .wifi-arc:nth-child(1) { width: 60px; height: 60px; animation-delay: 0s; }
+  .wifi-arc:nth-child(2) { width: 110px; height: 110px; animation-delay: 0.3s; }
+  .wifi-arc:nth-child(3) { width: 160px; height: 160px; animation-delay: 0.6s; }
+  .wifi-arc:nth-child(4) { width: 210px; height: 210px; animation-delay: 0.9s; }
+  @keyframes wifi-wave {
+    0% { opacity: 0; transform: rotate(-90deg) scale(0.5); }
+    20% { opacity: 1; }
+    100% { opacity: 0; transform: rotate(-90deg) scale(1.1); }
+  }
+  .wifi-center {
+    width: 18px; height: 18px;
+    background: var(--turquoise);
+    border-radius: 50%;
+    box-shadow: 0 0 32px var(--turquoise), 0 0 0 6px rgba(20,184,166,0.15);
+    z-index: 2;
+  }
+  .connect-title {
+    font-family: var(--serif);
+    font-size: 44px; margin-bottom: 14px; font-weight: 400;
+    letter-spacing: -0.5px;
+  }
+  .connect-status {
+    font-size: 13px; color: var(--ink-soft);
+    font-family: var(--mono); letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .connect-status .blink { animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: 0.2; } }
+  .connect-device {
+    font-size: 11px; color: var(--turquoise-deep);
+    font-family: var(--mono); letter-spacing: 2px;
+    text-transform: uppercase; margin-top: 24px;
+  }
+
+  /* ===== SCREEN 3: READY ===== */
+  .ready-layout {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 80px;
+    max-width: 1180px; width: 100%;
+    align-items: center;
+  }
+  .ready-visual {
+    position: relative;
+    aspect-ratio: 1 / 1.1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ready-machine {
+    width: 100%; height: 100%;
+    position: relative;
+  }
+  .ready-machine svg { width: 100%; height: 100%; }
+  .sensor-dot {
+    position: absolute;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--turquoise);
+    box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.5);
+    animation: sensor-pulse 2s infinite;
+  }
+  @keyframes sensor-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.6); }
+    70% { box-shadow: 0 0 0 16px rgba(20, 184, 166, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0); }
+  }
+
+  .ready-text { padding-right: 20px; }
+  .ready-title {
+    font-family: var(--serif);
+    font-size: clamp(40px, 4.5vw, 60px);
+    line-height: 1.05; font-weight: 400;
+    letter-spacing: -1px; margin-bottom: 24px;
+  }
+  .ready-title em { color: var(--turquoise-deep); font-style: italic; }
+  .ready-desc {
+    font-size: 16px; color: var(--ink-soft);
+    line-height: 1.6; margin-bottom: 32px;
+  }
+  .ready-checks {
+    list-style: none;
+    margin-bottom: 40px;
+  }
+  .ready-checks li {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  .ready-checks li:last-child { border-bottom: none; }
+  .ready-checks .check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--turquoise-mist);
+    color: var(--turquoise-deep);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .ready-checks .check svg { width: 12px; height: 12px; }
+
+  /* ===== SCREEN 4: MEASURING ===== */
+  #screen-measuring { flex-direction: column; }
+  .measuring-header {
+    text-align: center; margin-bottom: 48px;
+  }
+  .measuring-title {
+    font-family: var(--serif);
+    font-size: 44px; font-weight: 400;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .measuring-title em { color: var(--turquoise-deep); font-style: italic; }
+  .measuring-status {
+    font-size: 13px; color: var(--ink-mute);
+    font-family: var(--mono); letter-spacing: 1.5px;
+  }
+  .vitals-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+    max-width: 1240px; width: 100%;
+  }
+  .vital-card {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 24px 20px;
+    position: relative; overflow: hidden;
+    transition: all 0.5s cubic-bezier(.4,0,.2,1);
+    opacity: 0.4;
+  }
+  .vital-card.active {
+    opacity: 1;
+    border-color: var(--turquoise-light);
+    box-shadow: 0 16px 40px rgba(20, 184, 166, 0.12),
+                0 0 0 1px var(--turquoise-light);
+    transform: translateY(-4px);
+  }
+  .vital-card.done {
+    opacity: 1;
+    border-color: var(--line);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+    transform: translateY(0);
+  }
+  .vital-card::before {
+    content: "";
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--turquoise-light), var(--turquoise));
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 0.6s ease;
+  }
+  .vital-card.active::before, .vital-card.done::before { transform: scaleX(1); }
+
+  .vital-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .vital-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--turquoise-mist);
+    color: var(--turquoise-deep);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .vital-icon svg { width: 18px; height: 18px; }
+  .vital-status {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--ink-faint);
+    transition: background 0.3s ease;
+  }
+  .vital-card.active .vital-status {
+    background: var(--turquoise);
+    animation: pulse-dot 1.2s infinite;
+  }
+  .vital-card.done .vital-status { background: var(--verde); animation: none; }
+
+  .vital-label {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .vital-value {
+    font-family: var(--serif);
+    font-size: 42px;
+    line-height: 1;
+    color: var(--ink);
+    font-weight: 400;
+    letter-spacing: -1px;
+    display: flex; align-items: baseline; gap: 4px;
+    min-height: 42px;
+  }
+  .vital-unit {
+    font-size: 13px;
+    color: var(--ink-mute);
+    font-family: var(--sans);
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+  .vital-viz {
+    height: 36px; margin-top: 16px;
+    position: relative;
+  }
+  .vital-viz svg { width: 100%; height: 100%; }
+  .ecg-path {
+    fill: none;
+    stroke: var(--turquoise);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+  }
+  .vital-card.active .ecg-path {
+    animation: draw-ecg 1.5s linear infinite;
+  }
+  .vital-card.done .ecg-path {
+    stroke-dashoffset: 0;
+    opacity: 0.5;
+  }
+  @keyframes draw-ecg {
+    0% { stroke-dashoffset: 1000; }
+    100% { stroke-dashoffset: 0; }
+  }
+
+  .measuring-footer {
+    margin-top: 48px;
+    width: 100%; max-width: 600px;
+    text-align: center;
+  }
+  .progress-bar {
+    height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--turquoise-light), var(--turquoise));
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.5s ease;
+  }
+  .progress-text {
+    font-size: 11px;
+    color: var(--ink-mute);
+    font-family: var(--mono);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  /* ===== SCREEN 5: ANALYZING ===== */
+  .analyzing-content {
+    text-align: center;
+    max-width: 480px;
+  }
+  .neural-viz {
+    width: 280px; height: 280px;
+    margin: 0 auto 48px;
+    position: relative;
+  }
+  .neural-viz svg { width: 100%; height: 100%; }
+  .neural-node {
+    fill: var(--turquoise);
+    animation: node-pulse 1.6s infinite ease-in-out;
+  }
+  @keyframes node-pulse {
+    0%, 100% { opacity: 0.4; r: 4; }
+    50% { opacity: 1; r: 6; }
+  }
+  .neural-line {
+    stroke: var(--turquoise);
+    stroke-width: 1;
+    fill: none;
+    opacity: 0.2;
+    stroke-dasharray: 4 4;
+    animation: line-flow 2s linear infinite;
+  }
+  @keyframes line-flow {
+    to { stroke-dashoffset: -16; }
+  }
+  .analyzing-title {
+    font-family: var(--serif);
+    font-size: 40px; font-weight: 400;
+    letter-spacing: -0.5px;
+    margin-bottom: 12px;
+  }
+  .analyzing-title em { color: var(--turquoise-deep); font-style: italic; }
+  .analyzing-steps {
+    list-style: none;
+    margin-top: 32px;
+    text-align: left;
+    display: inline-block;
+  }
+  .analyzing-steps li {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 0;
+    font-size: 13px; color: var(--ink-mute);
+    font-family: var(--mono); letter-spacing: 0.5px;
+    transition: color 0.3s ease;
+  }
+  .analyzing-steps li.active { color: var(--turquoise-deep); }
+  .analyzing-steps li.done { color: var(--ink-soft); }
+  .analyzing-steps .step-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink-faint);
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  .analyzing-steps li.active .step-dot {
+    border-color: var(--turquoise);
+    background: var(--turquoise);
+    box-shadow: 0 0 0 4px rgba(20,184,166,0.15);
+  }
+  .analyzing-steps li.done .step-dot {
+    border-color: var(--verde);
+    background: var(--verde);
+  }
+  .analyzing-steps li.done .step-dot::after {
+    content: "✓"; color: white; font-size: 9px;
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ===== SCREEN 6: RESULT ===== */
+  #screen-result { padding-top: 90px; }
+  .result-layout {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 80px;
+    max-width: 1240px; width: 100%;
+    align-items: center;
+  }
+  .result-main { position: relative; }
+  .result-eyebrow {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 3px; text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 16px;
+  }
+  .result-level {
+    font-family: var(--serif);
+    font-size: clamp(64px, 8vw, 108px);
+    line-height: 0.95; font-weight: 400;
+    letter-spacing: -3px;
+    margin-bottom: 8px;
+    color: var(--level-color);
+    transition: color 0.6s ease;
+  }
+  .result-level em { font-style: italic; }
+  .result-priority {
+    display: inline-flex; align-items: center; gap: 12px;
+    margin-bottom: 24px;
+    padding: 8px 16px;
+    background: var(--level-soft);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--level-color);
+    transition: all 0.6s ease;
+  }
+  .result-priority .pri-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--level-color);
+    animation: pulse-dot 1.6s infinite;
+  }
+  .result-desc {
+    font-size: 18px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin-bottom: 32px;
+    max-width: 500px;
+  }
+  .result-symptoms {
+    font-size: 14px;
+    color: var(--ink-mute);
+    line-height: 1.6;
+    margin-bottom: 36px;
+    max-width: 500px;
+    padding: 16px 20px;
+    background: var(--turquoise-mist);
+    border-left: 3px solid var(--level-color);
+    border-radius: 4px;
+    transition: border-color 0.6s ease;
+  }
+  .result-symptoms strong {
+    display: block;
+    color: var(--ink);
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .result-actions { display: flex; gap: 12px; }
+  .result-actions .btn {
+    background: var(--level-color);
+    box-shadow: 0 12px 28px var(--level-shadow);
+    transition: all 0.6s ease;
+  }
+  .result-actions .btn:hover {
+    box-shadow: 0 16px 36px var(--level-shadow);
+  }
+
+  /* vitals summary */
+  .result-side {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.04);
+  }
+  .result-side-title {
+    font-family: var(--serif);
+    font-size: 24px; font-weight: 400;
+    margin-bottom: 4px;
+  }
+  .result-side-sub {
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-mute);
+    font-family: var(--mono);
+    margin-bottom: 24px;
+  }
+  .result-vitals { display: flex; flex-direction: column; }
+  .result-vital {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .result-vital:last-child { border-bottom: none; }
+  .rv-left { display: flex; align-items: center; gap: 12px; }
+  .rv-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--turquoise-mist);
+    color: var(--turquoise-deep);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rv-icon svg { width: 14px; height: 14px; }
+  .rv-label { font-size: 13px; color: var(--ink-soft); font-weight: 500; }
+  .rv-right { display: flex; align-items: center; gap: 12px; }
+  .rv-value {
+    font-family: var(--serif);
+    font-size: 22px; line-height: 1;
+    color: var(--ink); font-weight: 400;
+  }
+  .rv-value .rv-unit { font-size: 11px; color: var(--ink-mute); font-family: var(--sans); margin-left: 2px; font-weight: 500; }
+  .rv-flag {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--verde);
+  }
+  .rv-flag.warn { background: var(--amarillo); }
+  .rv-flag.alert { background: var(--rojo); }
+
+  /* ===== SCREEN 7: WRISTBAND ===== */
+  #screen-band { flex-direction: column; }
+  .band-stage {
+    position: relative;
+    width: 100%; max-width: 720px;
+    aspect-ratio: 1.4 / 1;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 32px;
+  }
+  .printer {
+    position: absolute;
+    top: 0;
+    width: 320px; height: 140px;
+    background: linear-gradient(180deg, #f8fafc, #e2e8f0);
+    border-radius: 20px 20px 8px 8px;
+    border: 1px solid var(--line);
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.08),
+                inset 0 -2px 0 rgba(0,0,0,0.05);
+    z-index: 2;
+  }
+  .printer::before {
+    content: "";
+    position: absolute;
+    bottom: 24px; left: 30px; right: 30px;
+    height: 6px;
+    background: #1e293b;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .printer::after {
+    content: "ASISTO PRINT-01";
+    position: absolute;
+    top: 18px; left: 0; right: 0;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--ink-mute);
+  }
+  .printer-led {
+    position: absolute;
+    top: 18px; right: 24px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--turquoise);
+    box-shadow: 0 0 8px var(--turquoise);
+    animation: pulse-dot 1.5s infinite;
+  }
+  .printer-screen {
+    position: absolute;
+    top: 36px; left: 30px; right: 30px;
+    height: 50px;
+    background: #0f172a;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    border: 1px solid #1e293b;
+  }
+  .printer-screen-text {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--turquoise-light);
+    letter-spacing: 1px;
+    text-align: center;
+  }
+  .printer-screen-text .row { line-height: 1.6; }
+
+  .band-paper {
+    position: absolute;
+    top: 130px;
+    width: 360px;
+    height: 80px;
+    background: var(--level-color, var(--turquoise));
+    border-radius: 4px;
+    transform-origin: top center;
+    transform: scaleY(0);
+    transition: transform 1.2s cubic-bezier(.4,0,.2,1), background 0.6s ease;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .band-paper.printing {
+    transform: scaleY(1);
+  }
+  .band-paper::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(90deg, transparent 0, transparent 14px, rgba(255,255,255,0.1) 14px, rgba(255,255,255,0.1) 15px);
+  }
+
+  .band-final {
+    position: absolute;
+    width: 480px;
+    height: 90px;
+    background: var(--level-color, var(--turquoise));
+    border-radius: 12px;
+    box-shadow: 0 24px 64px var(--level-shadow, rgba(20,184,166,0.3));
+    display: flex; align-items: center;
+    padding: 0 32px;
+    opacity: 0; transform: translateY(40px) scale(0.95);
+    transition: all 0.8s cubic-bezier(.4,0,.2,1);
+    z-index: 3;
+    overflow: hidden;
+  }
+  .band-final.show {
+    opacity: 1;
+    transform: translateY(140px) scale(1);
+  }
+  .band-final::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .band-final::after {
+    content: "";
+    position: absolute;
+    left: 12px; top: 12px; bottom: 12px;
+    width: 3px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 2px;
+  }
+  .band-content {
+    position: relative;
+    color: white;
+    flex: 1;
+    margin-left: 16px;
+  }
+  .band-id {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    opacity: 0.85;
+    margin-bottom: 4px;
+  }
+  .band-name {
+    font-family: var(--serif);
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+  .band-name em { font-style: italic; }
+  .band-time {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    opacity: 0.85;
+    margin-top: 4px;
+  }
+  .band-qr {
+    width: 56px; height: 56px;
+    background: white;
+    border-radius: 6px;
+    padding: 4px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .band-qr svg { width: 100%; height: 100%; }
+
+  .band-info {
+    text-align: center; margin-bottom: 24px;
+  }
+  .band-info-title {
+    font-family: var(--serif);
+    font-size: 36px;
+    font-weight: 400;
+    margin-bottom: 8px;
+  }
+  .band-info-title em { color: var(--level-color); font-style: italic; transition: color 0.6s ease; }
+  .band-info-desc {
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+
+  /* demo controls */
+  .demo-controls {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    z-index: 200;
+    display: flex; flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    font-family: var(--mono);
+  }
+  .demo-toggle {
+    background: white;
+    border: 1px solid var(--line);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 10px;
+    color: var(--ink-mute);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .demo-toggle:hover { color: var(--turquoise-deep); }
+  .demo-panel {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 220px;
+  }
+  .demo-panel.open { display: flex; }
+  .demo-panel-title {
+    font-size: 9px;
+    color: var(--ink-mute);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--line-soft);
+    margin-bottom: 4px;
+  }
+  .demo-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.2s ease;
+  }
+  .demo-btn:hover { background: var(--line-soft); }
+  .demo-btn .key {
+    background: var(--ink);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    margin-left: auto;
+  }
+  .demo-btn .swatch {
+    width: 12px; height: 12px;
+    border-radius: 3px;
+  }
+
+  @media (max-width: 1080px) {
+    .vitals-grid { grid-template-columns: repeat(3, 1fr); }
+    .ready-layout, .result-layout { grid-template-columns: 1fr; gap: 40px; }
+    .ready-visual { aspect-ratio: 1 / 1; max-width: 360px; margin: 0 auto; }
+  }
+  @media (max-width: 720px) {
+    .vitals-grid { grid-template-columns: repeat(2, 1fr); }
+    .topbar { padding: 16px 20px; }
+    .screen { padding: 80px 20px 20px; }
+    .band-final { width: 90%; }
+    .printer { width: 80%; max-width: 320px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- topbar -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 12h3l2-7 4 14 2-7h7" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">ASIST<em>O</em></span>
+        <span class="brand-sub">Eficiencia robótica · Salud pública</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-meta"><span class="dot"></span> Hospital General · Estación 03</span>
+    </div>
+  </div>
+
+  <!-- ====== SCREEN 1: WELCOME ====== -->
+  <section class="screen active" id="screen-welcome">
+    <div class="welcome-content">
+      <div class="welcome-mark-wrap">
+        <div class="welcome-mark-inner">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 12h3l2-7 4 14 2-7h7" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="eyebrow">Auto-chequeo de pacientes</div>
+      <h1 class="welcome-title">Bienvenido a <em>ASISTO</em></h1>
+      <p class="welcome-tagline">
+        Coloca tu mano en el equipo y obtén tu nivel de prioridad clínica<br/>
+        en menos de un minuto.
+      </p>
+      <div class="welcome-features">
+        <span>Pulso</span>
+        <span>Oxigenación</span>
+        <span>Temperatura</span>
+        <span>Peso</span>
+        <span>Presión</span>
+      </div>
+      <button class="btn" id="btn-start">
+        Conectar equipo
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 12h14M13 5l7 7-7 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ====== SCREEN 2: CONNECTING ====== -->
+  <section class="screen" id="screen-connecting">
+    <div class="connect-content">
+      <div class="wifi-animation">
+        <span class="wifi-arc"></span>
+        <span class="wifi-arc"></span>
+        <span class="wifi-arc"></span>
+        <span class="wifi-arc"></span>
+        <span class="wifi-center"></span>
+      </div>
+      <div class="eyebrow">Vinculación segura</div>
+      <h2 class="connect-title">Conectando equipo</h2>
+      <p class="connect-status">Buscando dispositivos en red local<span class="blink">...</span></p>
+      <p class="connect-device" id="connect-device">ASISTO-01 · 192.168.4.21</p>
+    </div>
+  </section>
+
+  <!-- ====== SCREEN 3: READY ====== -->
+  <section class="screen" id="screen-ready">
+    <div class="ready-layout">
+      <div class="ready-visual">
+        <div class="ready-machine">
+          <svg viewBox="0 0 360 400" xmlns="http://www.w3.org/2000/svg">
+            <!-- machine body -->
+            <defs>
+              <linearGradient id="mach" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="100%" stop-color="#f1f5f9"/>
+              </linearGradient>
+              <linearGradient id="screen-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#0f766e"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+            </defs>
+
+            <!-- base -->
+            <rect x="60" y="320" width="240" height="60" rx="12" fill="url(#mach)" stroke="#e2e8f0"/>
+            <rect x="80" y="335" width="200" height="6" rx="3" fill="#cbd5e1"/>
+            <text x="180" y="365" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#94a3b8" letter-spacing="2">BÁSCULA · 250kg MAX</text>
+
+            <!-- vertical column -->
+            <rect x="160" y="120" width="40" height="200" rx="8" fill="url(#mach)" stroke="#e2e8f0"/>
+
+            <!-- main unit -->
+            <rect x="80" y="40" width="200" height="120" rx="20" fill="url(#mach)" stroke="#e2e8f0"/>
+
+            <!-- screen -->
+            <rect x="100" y="60" width="160" height="60" rx="8" fill="url(#screen-grad)"/>
+            <text x="180" y="85" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#5eead4" letter-spacing="2">ASISTO READY</text>
+            <circle cx="180" cy="100" r="3" fill="#5eead4"/>
+            <circle cx="180" cy="100" r="3" fill="#5eead4">
+              <animate attributeName="opacity" values="1;0.2;1" dur="1.5s" repeatCount="indefinite"/>
+            </circle>
+
+            <!-- hand sensor -->
+            <ellipse cx="180" cy="220" rx="60" ry="36" fill="#f0fdfa" stroke="#5eead4" stroke-width="1.5"/>
+            <ellipse cx="180" cy="220" rx="40" ry="22" fill="white" stroke="#14b8a6" stroke-width="1" stroke-dasharray="3 3"/>
+            <text x="180" y="224" text-anchor="middle" font-family="Manrope" font-size="9" fill="#0d9488" font-weight="600" letter-spacing="1">COLOCA LA MANO</text>
+
+            <!-- machine label -->
+            <text x="180" y="155" text-anchor="middle" font-family="Instrument Serif" font-size="14" fill="#0f172a" font-style="italic">ASISTO 01</text>
+          </svg>
+          <div class="sensor-dot" style="top: 36%; left: 50%; transform: translate(-50%, -50%);"></div>
+          <div class="sensor-dot" style="top: 56%; left: 50%; transform: translate(-50%, -50%); animation-delay: 0.3s;"></div>
+          <div class="sensor-dot" style="top: 84%; left: 50%; transform: translate(-50%, -50%); animation-delay: 0.6s;"></div>
+        </div>
+      </div>
+      <div class="ready-text">
+        <div class="eyebrow">Equipo conectado</div>
+        <h2 class="ready-title">Listo para tu <em>auto-chequeo</em></h2>
+        <p class="ready-desc">
+          Sigue estos pasos antes de iniciar. La medición completa toma menos de 30 segundos.
+        </p>
+        <ul class="ready-checks">
+          <li>
+            <span class="check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            Coloca tu mano izquierda en el sensor
+          </li>
+          <li>
+            <span class="check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            Mantente de pie sobre la báscula
+          </li>
+          <li>
+            <span class="check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            Permanece quieto y respira con normalidad
+          </li>
+        </ul>
+        <button class="btn" id="btn-measure">
+          Iniciar evaluación
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 5l7 7-7 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== SCREEN 4: MEASURING ====== -->
+  <section class="screen" id="screen-measuring">
+    <div class="measuring-header">
+      <div class="eyebrow">Evaluación en curso</div>
+      <h2 class="measuring-title">Capturando <em>signos vitales</em></h2>
+      <p class="measuring-status" id="measuring-status">Conectado a sensores · No te muevas</p>
+    </div>
+
+    <div class="vitals-grid" id="vitals-grid">
+      <!-- vital: pulso -->
+      <div class="vital-card" data-vital="pulso">
+        <div class="vital-head">
+          <div class="vital-icon">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="vital-status"></span>
+        </div>
+        <div class="vital-label">Pulso</div>
+        <div class="vital-value"><span class="vital-num">--</span><span class="vital-unit">bpm</span></div>
+        <div class="vital-viz">
+          <svg viewBox="0 0 200 36" preserveAspectRatio="none">
+            <path class="ecg-path" d="M0,18 L40,18 L48,18 L52,8 L56,28 L60,12 L64,18 L100,18 L108,18 L112,8 L116,28 L120,12 L124,18 L160,18 L168,18 L172,8 L176,28 L180,12 L184,18 L200,18"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- vital: oxigenacion -->
+      <div class="vital-card" data-vital="spo2">
+        <div class="vital-head">
+          <div class="vital-icon">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="vital-status"></span>
+        </div>
+        <div class="vital-label">Oxigenación</div>
+        <div class="vital-value"><span class="vital-num">--</span><span class="vital-unit">%</span></div>
+        <div class="vital-viz">
+          <svg viewBox="0 0 200 36" preserveAspectRatio="none">
+            <path class="ecg-path" d="M0,28 Q50,8 100,18 T200,12"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- vital: temperatura -->
+      <div class="vital-card" data-vital="temp">
+        <div class="vital-head">
+          <div class="vital-icon">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M14 4v10.54a4 4 0 11-4 0V4a2 2 0 014 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="vital-status"></span>
+        </div>
+        <div class="vital-label">Temperatura</div>
+        <div class="vital-value"><span class="vital-num">--</span><span class="vital-unit">°C</span></div>
+        <div class="vital-viz">
+          <svg viewBox="0 0 200 36" preserveAspectRatio="none">
+            <path class="ecg-path" d="M0,24 L60,24 L80,12 L120,12 L140,24 L200,24"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- vital: peso -->
+      <div class="vital-card" data-vital="peso">
+        <div class="vital-head">
+          <div class="vital-icon">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <span class="vital-status"></span>
+        </div>
+        <div class="vital-label">Peso</div>
+        <div class="vital-value"><span class="vital-num">--</span><span class="vital-unit">kg</span></div>
+        <div class="vital-viz">
+          <svg viewBox="0 0 200 36" preserveAspectRatio="none">
+            <path class="ecg-path" d="M0,28 Q40,28 60,18 Q80,8 100,18 Q120,28 140,18 Q160,8 200,18"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- vital: presion -->
+      <div class="vital-card" data-vital="presion">
+        <div class="vital-head">
+          <div class="vital-icon">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 1118 0 9 9 0 01-18 0z" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <span class="vital-status"></span>
+        </div>
+        <div class="vital-label">Presión</div>
+        <div class="vital-value"><span class="vital-num">--</span><span class="vital-unit">mmHg</span></div>
+        <div class="vital-viz">
+          <svg viewBox="0 0 200 36" preserveAspectRatio="none">
+            <path class="ecg-path" d="M0,18 L20,18 L24,8 L28,28 L32,18 L80,18 L84,8 L88,28 L92,18 L140,18 L144,8 L148,28 L152,18 L200,18"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="measuring-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-text" id="progress-text">0 / 5 sensores</div>
+    </div>
+  </section>
+
+  <!-- ====== SCREEN 5: ANALYZING ====== -->
+  <section class="screen" id="screen-analyzing">
+    <div class="analyzing-content">
+      <div class="neural-viz">
+        <svg viewBox="0 0 200 200">
+          <!-- input layer -->
+          <line class="neural-line" x1="40" y1="40" x2="100" y2="60"/>
+          <line class="neural-line" x1="40" y1="80" x2="100" y2="60"/>
+          <line class="neural-line" x1="40" y1="120" x2="100" y2="60"/>
+          <line class="neural-line" x1="40" y1="160" x2="100" y2="60"/>
+          <line class="neural-line" x1="40" y1="40" x2="100" y2="100"/>
+          <line class="neural-line" x1="40" y1="80" x2="100" y2="100"/>
+          <line class="neural-line" x1="40" y1="120" x2="100" y2="100"/>
+          <line class="neural-line" x1="40" y1="160" x2="100" y2="100"/>
+          <line class="neural-line" x1="40" y1="40" x2="100" y2="140"/>
+          <line class="neural-line" x1="40" y1="80" x2="100" y2="140"/>
+          <line class="neural-line" x1="40" y1="120" x2="100" y2="140"/>
+          <line class="neural-line" x1="40" y1="160" x2="100" y2="140"/>
+          <!-- to output -->
+          <line class="neural-line" x1="100" y1="60" x2="160" y2="100"/>
+          <line class="neural-line" x1="100" y1="100" x2="160" y2="100"/>
+          <line class="neural-line" x1="100" y1="140" x2="160" y2="100"/>
+
+          <circle class="neural-node" cx="40" cy="40" r="5"/>
+          <circle class="neural-node" cx="40" cy="80" r="5" style="animation-delay: 0.2s"/>
+          <circle class="neural-node" cx="40" cy="120" r="5" style="animation-delay: 0.4s"/>
+          <circle class="neural-node" cx="40" cy="160" r="5" style="animation-delay: 0.6s"/>
+          <circle class="neural-node" cx="100" cy="60" r="5" style="animation-delay: 0.3s"/>
+          <circle class="neural-node" cx="100" cy="100" r="5" style="animation-delay: 0.5s"/>
+          <circle class="neural-node" cx="100" cy="140" r="5" style="animation-delay: 0.7s"/>
+          <circle class="neural-node" cx="160" cy="100" r="6" style="animation-delay: 0.8s; fill: var(--turquoise-deep)"/>
+        </svg>
+      </div>
+      <div class="eyebrow">Procesando datos clínicos</div>
+      <h2 class="analyzing-title">Calculando <em>nivel de prioridad</em></h2>
+      <ul class="analyzing-steps" id="analyzing-steps">
+        <li data-step="0"><span class="step-dot"></span> Validando rangos vitales</li>
+        <li data-step="1"><span class="step-dot"></span> Aplicando matriz de triage</li>
+        <li data-step="2"><span class="step-dot"></span> Asignando código de prioridad</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ====== SCREEN 6: RESULT ====== -->
+  <section class="screen" id="screen-result">
+    <div class="result-layout">
+      <div class="result-main">
+        <div class="result-eyebrow">Nivel de triage asignado</div>
+        <h1 class="result-level" id="result-level">Urgencia<br/><em id="result-level-em">Menor</em></h1>
+        <div class="result-priority">
+          <span class="pri-dot"></span>
+          <span id="result-priority-text">Prioridad 4 · Verde</span>
+        </div>
+        <p class="result-desc" id="result-desc">
+          Estado clínico estable. Puede esperar atención sin riesgo significativo.
+        </p>
+        <div class="result-symptoms" id="result-symptoms">
+          <strong>Hallazgos compatibles</strong>
+          Dolor leve, lesiones menores, signos vitales dentro de rangos aceptables.
+        </div>
+        <div class="result-actions">
+          <button class="btn" id="btn-print">
+            Imprimir pulsera
+            <svg viewBox="0 0 24 24" fill="none"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="btn btn-ghost" id="btn-restart-1">Nueva evaluación</button>
+        </div>
+      </div>
+
+      <aside class="result-side">
+        <h3 class="result-side-title">Signos vitales</h3>
+        <p class="result-side-sub" id="result-side-sub">Paciente · Estación 03 · 14:32</p>
+        <div class="result-vitals" id="result-vitals">
+          <!-- filled by JS -->
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ====== SCREEN 7: WRISTBAND ====== -->
+  <section class="screen" id="screen-band">
+    <div class="band-info">
+      <div class="eyebrow">Pulsera generada</div>
+      <h2 class="band-info-title">Pase a sala de <em id="band-area">espera</em></h2>
+      <p class="band-info-desc" id="band-info-desc">El personal verá tu prioridad por el color de la pulsera.</p>
+    </div>
+    <div class="band-stage">
+      <div class="printer">
+        <span class="printer-led"></span>
+        <div class="printer-screen">
+          <div class="printer-screen-text">
+            <div class="row">▸ IMPRIMIENDO PULSERA</div>
+            <div class="row" id="printer-id">▸ ID PX-7421 · 14:32</div>
+          </div>
+        </div>
+      </div>
+      <div class="band-paper" id="band-paper"></div>
+      <div class="band-final" id="band-final">
+        <div class="band-qr">
+          <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <rect width="48" height="48" fill="white"/>
+            <g fill="black">
+              <rect x="4" y="4" width="12" height="12"/>
+              <rect x="7" y="7" width="6" height="6" fill="white"/>
+              <rect x="9" y="9" width="2" height="2" fill="black"/>
+              <rect x="32" y="4" width="12" height="12"/>
+              <rect x="35" y="7" width="6" height="6" fill="white"/>
+              <rect x="37" y="9" width="2" height="2" fill="black"/>
+              <rect x="4" y="32" width="12" height="12"/>
+              <rect x="7" y="35" width="6" height="6" fill="white"/>
+              <rect x="9" y="37" width="2" height="2" fill="black"/>
+              <rect x="20" y="4" width="2" height="2"/><rect x="24" y="4" width="2" height="2"/>
+              <rect x="20" y="8" width="2" height="2"/><rect x="26" y="8" width="2" height="2"/>
+              <rect x="22" y="12" width="2" height="2"/><rect x="28" y="12" width="2" height="2"/>
+              <rect x="20" y="20" width="2" height="2"/><rect x="24" y="20" width="2" height="2"/><rect x="28" y="20" width="2" height="2"/>
+              <rect x="22" y="24" width="2" height="2"/><rect x="26" y="24" width="2" height="2"/><rect x="32" y="24" width="2" height="2"/>
+              <rect x="20" y="28" width="2" height="2"/><rect x="30" y="28" width="2" height="2"/>
+              <rect x="22" y="32" width="2" height="2"/><rect x="26" y="32" width="2" height="2"/>
+              <rect x="20" y="36" width="2" height="2"/><rect x="28" y="36" width="2" height="2"/>
+              <rect x="24" y="40" width="2" height="2"/><rect x="32" y="40" width="2" height="2"/>
+              <rect x="36" y="20" width="2" height="2"/><rect x="40" y="20" width="2" height="2"/>
+              <rect x="38" y="24" width="2" height="2"/><rect x="42" y="24" width="2" height="2"/>
+              <rect x="36" y="28" width="2" height="2"/><rect x="40" y="28" width="2" height="2"/>
+              <rect x="36" y="32" width="2" height="2"/><rect x="42" y="32" width="2" height="2"/>
+              <rect x="40" y="36" width="2" height="2"/>
+              <rect x="36" y="40" width="2" height="2"/>
+            </g>
+          </svg>
+        </div>
+        <div class="band-content">
+          <div class="band-id" id="band-content-id">PX-7421</div>
+          <div class="band-name"><em id="band-level-text">Urgencia Menor</em></div>
+          <div class="band-time" id="band-content-time">EST. 03 · 14:32 · 07 MAY</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-ghost" id="btn-restart-2" style="margin-top: 24px;">Iniciar nueva evaluación</button>
+  </section>
+
+  <!-- demo controls -->
+  <div class="demo-controls">
+    <button class="demo-toggle" id="demo-toggle">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8v4l2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Demo
+    </button>
+    <div class="demo-panel" id="demo-panel">
+      <div class="demo-panel-title">Forzar resultado</div>
+      <button class="demo-btn" data-force="random"><span class="swatch" style="background: linear-gradient(135deg, #2563eb, #dc2626)"></span> Aleatorio realista <span class="key">0</span></button>
+      <button class="demo-btn" data-force="azul"><span class="swatch" style="background: #2563eb"></span> No urgente · Azul <span class="key">1</span></button>
+      <button class="demo-btn" data-force="verde"><span class="swatch" style="background: #16a34a"></span> Urgencia menor · Verde <span class="key">2</span></button>
+      <button class="demo-btn" data-force="amarillo"><span class="swatch" style="background: #eab308"></span> Urgencia · Amarillo <span class="key">3</span></button>
+      <button class="demo-btn" data-force="naranja"><span class="swatch" style="background: #ea580c"></span> Emergencia · Naranja <span class="key">4</span></button>
+      <button class="demo-btn" data-force="rojo"><span class="swatch" style="background: #dc2626"></span> Reanimación · Rojo <span class="key">5</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   ASISTO — Demo lógica
+   ========================================================= */
+const SCENARIOS = {
+  azul: {
+    name: "No Urgente",
+    em: "Azul",
+    priority: "Prioridad 5 · Azul",
+    color: "#2563eb",
+    soft: "#dbeafe",
+    shadow: "rgba(37, 99, 235, 0.3)",
+    desc: "Atención diferible. Síntomas leves, prolongados o crónicos sin riesgo agudo.",
+    symptoms: "Molestias menores, dolor leve persistente, signos vitales completamente normales.",
+    area: "consulta general",
+    areaDesc: "Tu condición no es urgente. El personal te llamará por orden de llegada.",
+    vitals: { pulso: 72, spo2: 98, temp: 36.6, peso: 71.4, presion: "118/78" },
+    flags: { pulso: "ok", spo2: "ok", temp: "ok", peso: "ok", presion: "ok" }
+  },
+  verde: {
+    name: "Urgencia Menor",
+    em: "Verde",
+    priority: "Prioridad 4 · Verde",
+    color: "#16a34a",
+    soft: "#dcfce7",
+    shadow: "rgba(22, 163, 74, 0.3)",
+    desc: "Estado clínico estable. Puede esperar atención sin riesgo significativo.",
+    symptoms: "Dolor leve, lesiones menores, signos vitales dentro de rangos aceptables.",
+    area: "espera verde",
+    areaDesc: "Serás atendido en breve. Mantente en la sala de espera.",
+    vitals: { pulso: 86, spo2: 96, temp: 37.3, peso: 73.2, presion: "128/84" },
+    flags: { pulso: "ok", spo2: "ok", temp: "warn", peso: "ok", presion: "ok" }
+  },
+  amarillo: {
+    name: "Urgencia",
+    em: "Amarillo",
+    priority: "Prioridad 3 · Amarillo",
+    color: "#eab308",
+    soft: "#fef9c3",
+    shadow: "rgba(234, 179, 8, 0.35)",
+    desc: "Condición que requiere atención rápida. Estable pero con riesgo de deterioro.",
+    symptoms: "Dolor moderado, fiebre alta, vómitos. Requiere valoración médica pronta.",
+    area: "consulta urgente",
+    areaDesc: "Pasa a consulta urgente. El personal te asistirá en minutos.",
+    vitals: { pulso: 112, spo2: 94, temp: 38.7, peso: 71.8, presion: "146/94" },
+    flags: { pulso: "warn", spo2: "warn", temp: "alert", peso: "ok", presion: "warn" }
+  },
+  naranja: {
+    name: "Emergencia",
+    em: "Naranja",
+    priority: "Prioridad 2 · Naranja",
+    color: "#ea580c",
+    soft: "#ffedd5",
+    shadow: "rgba(234, 88, 12, 0.4)",
+    desc: "Riesgo vital potencial. Requiere atención médica inmediata por personal especializado.",
+    symptoms: "Dificultad respiratoria, dolor torácico, parálisis o alteración del estado mental.",
+    area: "shock / urgencias",
+    areaDesc: "Personal médico ha sido notificado. Diríjete inmediatamente al área señalada.",
+    vitals: { pulso: 134, spo2: 89, temp: 39.4, peso: 70.6, presion: "168/108" },
+    flags: { pulso: "alert", spo2: "alert", temp: "alert", peso: "ok", presion: "alert" }
+  },
+  rojo: {
+    name: "Reanimación",
+    em: "Rojo",
+    priority: "Prioridad 1 · Rojo",
+    color: "#dc2626",
+    soft: "#fee2e2",
+    shadow: "rgba(220, 38, 38, 0.45)",
+    desc: "Riesgo vital inminente. Atención inmediata por equipo de reanimación.",
+    symptoms: "Compromiso vital severo. Requiere intervención del equipo de reanimación AHORA.",
+    area: "reanimación",
+    areaDesc: "ALERTA enviada al equipo médico. Permanece donde estás, vienen en camino.",
+    vitals: { pulso: 158, spo2: 81, temp: 40.1, peso: 69.9, presion: "82/52" },
+    flags: { pulso: "alert", spo2: "alert", temp: "alert", peso: "ok", presion: "alert" }
+  }
+};
+
+const VITAL_META = {
+  pulso: { label: "Pulso", unit: "bpm", icon: "heart" },
+  spo2: { label: "Oxigenación", unit: "%", icon: "drop" },
+  temp: { label: "Temperatura", unit: "°C", icon: "therm" },
+  peso: { label: "Peso", unit: "kg", icon: "scale" },
+  presion: { label: "Presión", unit: "mmHg", icon: "gauge" }
+};
+
+const VITAL_ICON_SVG = {
+  heart: '<svg viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  drop: '<svg viewBox="0 0 24 24" fill="none"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  therm: '<svg viewBox="0 0 24 24" fill="none"><path d="M14 4v10.54a4 4 0 11-4 0V4a2 2 0 014 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  scale: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  gauge: '<svg viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 1118 0 9 9 0 01-18 0z" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+};
+
+let forcedScenario = null;
+let currentScenario = null;
+let currentPatientId = null;
+
+/* ----- screen helpers ----- */
+const screens = ["welcome", "connecting", "ready", "measuring", "analyzing", "result", "band"];
+function showScreen(name) {
+  screens.forEach(s => {
+    document.getElementById("screen-" + s).classList.toggle("active", s === name);
+  });
+}
+
+function generatePatientId() {
+  const n = Math.floor(1000 + Math.random() * 9000);
+  return "PX-" + n;
+}
+
+function nowTimeStr() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+}
+
+function nowDateStr() {
+  const months = ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"];
+  const d = new Date();
+  return String(d.getDate()).padStart(2, "0") + " " + months[d.getMonth()];
+}
+
+/* ----- screen 1 → 2 ----- */
+document.getElementById("btn-start").addEventListener("click", () => {
+  showScreen("connecting");
+  setTimeout(() => showScreen("ready"), 2400);
+});
+
+/* ----- screen 3 → 4 ----- */
+document.getElementById("btn-measure").addEventListener("click", () => {
+  startMeasuring();
+});
+
+/* ----- measuring sequence ----- */
+function startMeasuring() {
+  showScreen("measuring");
+  // determine scenario: forced or random (weighted toward less-severe for realism)
+  if (forcedScenario && SCENARIOS[forcedScenario]) {
+    currentScenario = SCENARIOS[forcedScenario];
+  } else {
+    const weighted = ["azul","azul","verde","verde","verde","amarillo","amarillo","naranja","rojo"];
+    const pick = weighted[Math.floor(Math.random() * weighted.length)];
+    currentScenario = SCENARIOS[pick];
+  }
+  forcedScenario = null;
+
+  // reset cards
+  const cards = document.querySelectorAll(".vital-card");
+  cards.forEach(c => {
+    c.classList.remove("active", "done");
+    c.querySelector(".vital-num").textContent = "--";
+  });
+  document.getElementById("progress-fill").style.width = "0%";
+  document.getElementById("progress-text").textContent = "0 / 5 sensores";
+  document.getElementById("measuring-status").textContent = "Conectado a sensores · No te muevas";
+
+  const order = ["pulso", "spo2", "temp", "peso", "presion"];
+  let idx = 0;
+
+  const next = () => {
+    if (idx >= order.length) {
+      // all done
+      setTimeout(() => {
+        document.getElementById("measuring-status").textContent = "Captura completa · Procesando...";
+        setTimeout(startAnalyzing, 800);
+      }, 400);
+      return;
+    }
+    const key = order[idx];
+    const card = document.querySelector(`[data-vital="${key}"]`);
+    card.classList.add("active");
+    const numEl = card.querySelector(".vital-num");
+    const target = currentScenario.vitals[key];
+
+    document.getElementById("measuring-status").textContent = `Midiendo ${VITAL_META[key].label.toLowerCase()}...`;
+
+    if (typeof target === "number") {
+      animateNumber(numEl, target, 1100);
+    } else {
+      // pressure "120/80"
+      const [sys, dia] = target.split("/").map(Number);
+      animatePressure(numEl, sys, dia, 1100);
+    }
+
+    setTimeout(() => {
+      card.classList.remove("active");
+      card.classList.add("done");
+      idx++;
+      const pct = (idx / order.length) * 100;
+      document.getElementById("progress-fill").style.width = pct + "%";
+      document.getElementById("progress-text").textContent = `${idx} / 5 sensores`;
+      next();
+    }, 1400);
+  };
+
+  setTimeout(next, 600);
+}
+
+function animateNumber(el, target, duration) {
+  const start = performance.now();
+  const isFloat = !Number.isInteger(target);
+  const tick = (t) => {
+    const p = Math.min(1, (t - start) / duration);
+    const eased = 1 - Math.pow(1 - p, 3);
+    const val = target * eased;
+    el.textContent = isFloat ? val.toFixed(1) : Math.round(val);
+    if (p < 1) requestAnimationFrame(tick);
+    else el.textContent = isFloat ? target.toFixed(1) : target;
+  };
+  requestAnimationFrame(tick);
+}
+
+function animatePressure(el, sys, dia, duration) {
+  const start = performance.now();
+  const tick = (t) => {
+    const p = Math.min(1, (t - start) / duration);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(sys * eased) + "/" + Math.round(dia * eased);
+    if (p < 1) requestAnimationFrame(tick);
+    else el.textContent = sys + "/" + dia;
+  };
+  requestAnimationFrame(tick);
+}
+
+/* ----- analyzing ----- */
+function startAnalyzing() {
+  showScreen("analyzing");
+  const steps = document.querySelectorAll("#analyzing-steps li");
+  steps.forEach(s => s.classList.remove("active", "done"));
+
+  let i = 0;
+  const total = steps.length;
+  const advance = () => {
+    if (i > 0) steps[i - 1].classList.remove("active");
+    if (i > 0) steps[i - 1].classList.add("done");
+    if (i < total) {
+      steps[i].classList.add("active");
+      i++;
+      setTimeout(advance, 800);
+    } else {
+      setTimeout(showResult, 600);
+    }
+  };
+  setTimeout(advance, 300);
+}
+
+/* ----- result ----- */
+function showResult() {
+  const s = currentScenario;
+  document.body.dataset.result = colorKey(s);
+
+  // set CSS variables on result main
+  const main = document.querySelector(".result-main");
+  main.style.setProperty("--level-color", s.color);
+  main.style.setProperty("--level-soft", s.soft);
+  main.style.setProperty("--level-shadow", s.shadow);
+
+  // Set on band screen too
+  const bandStage = document.querySelector(".band-stage");
+  bandStage.style.setProperty("--level-color", s.color);
+  bandStage.style.setProperty("--level-shadow", s.shadow);
+  document.querySelector(".band-info-title em").style.color = s.color;
+  document.querySelector(".result-symptoms").style.borderLeftColor = s.color;
+
+  // text
+  document.getElementById("result-level").innerHTML = formatLevel(s.name);
+  document.getElementById("result-priority-text").textContent = s.priority;
+  document.getElementById("result-desc").textContent = s.desc;
+  document.querySelector("#result-symptoms").innerHTML = `<strong>Hallazgos compatibles</strong>${s.symptoms}`;
+
+  // patient id + time
+  currentPatientId = generatePatientId();
+  document.getElementById("result-side-sub").textContent = `${currentPatientId} · Estación 03 · ${nowTimeStr()}`;
+
+  // vitals list
+  const list = document.getElementById("result-vitals");
+  list.innerHTML = "";
+  for (const key of ["pulso","spo2","temp","peso","presion"]) {
+    const meta = VITAL_META[key];
+    const flag = s.flags[key];
+    const flagClass = flag === "warn" ? "warn" : flag === "alert" ? "alert" : "";
+    list.innerHTML += `
+      <div class="result-vital">
+        <div class="rv-left">
+          <div class="rv-icon">${VITAL_ICON_SVG[meta.icon]}</div>
+          <span class="rv-label">${meta.label}</span>
+        </div>
+        <div class="rv-right">
+          <div class="rv-value">${s.vitals[key]}<span class="rv-unit">${meta.unit}</span></div>
+          <span class="rv-flag ${flagClass}"></span>
+        </div>
+      </div>
+    `;
+  }
+
+  showScreen("result");
+}
+
+function formatLevel(name) {
+  // split into two lines: first word and rest in italic, e.g., "Urgencia Menor" → "Urgencia<br><em>Menor</em>"
+  // for single words: just italic
+  const words = name.split(" ");
+  if (words.length === 1) return `<em>${words[0]}</em>`;
+  return `${words[0]}<br/><em>${words.slice(1).join(" ")}</em>`;
+}
+
+function colorKey(s) {
+  for (const k in SCENARIOS) if (SCENARIOS[k] === s) return k;
+  return "verde";
+}
+
+/* ----- print → band ----- */
+document.getElementById("btn-print").addEventListener("click", () => {
+  showBand();
+});
+
+function showBand() {
+  const s = currentScenario;
+  // setup colors on band
+  document.getElementById("band-paper").style.background = s.color;
+  document.getElementById("band-final").style.background = s.color;
+  document.getElementById("band-final").style.boxShadow = `0 24px 64px ${s.shadow}`;
+  document.getElementById("band-level-text").textContent = s.name;
+  document.getElementById("band-area").textContent = s.area;
+  document.getElementById("band-area").style.color = s.color;
+  document.getElementById("band-info-desc").textContent = s.areaDesc;
+  document.getElementById("printer-id").textContent = `▸ ID ${currentPatientId} · ${nowTimeStr()}`;
+  document.getElementById("band-content-id").textContent = currentPatientId;
+  document.getElementById("band-content-time").textContent = `EST. 03 · ${nowTimeStr()} · ${nowDateStr()}`;
+
+  // reset animation
+  const paper = document.getElementById("band-paper");
+  const final = document.getElementById("band-final");
+  paper.classList.remove("printing");
+  final.classList.remove("show");
+
+  showScreen("band");
+
+  // sequence
+  setTimeout(() => paper.classList.add("printing"), 300);
+  setTimeout(() => final.classList.add("show"), 1500);
+}
+
+/* ----- restart ----- */
+function restart() {
+  forcedScenario = null;
+  document.body.removeAttribute("data-result");
+  document.getElementById("band-paper").classList.remove("printing");
+  document.getElementById("band-final").classList.remove("show");
+  showScreen("welcome");
+}
+document.getElementById("btn-restart-1").addEventListener("click", restart);
+document.getElementById("btn-restart-2").addEventListener("click", restart);
+
+/* ----- demo controls ----- */
+const demoToggle = document.getElementById("demo-toggle");
+const demoPanel = document.getElementById("demo-panel");
+demoToggle.addEventListener("click", () => demoPanel.classList.toggle("open"));
+document.querySelectorAll(".demo-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const force = btn.dataset.force;
+    if (force === "random") forcedScenario = null;
+    else forcedScenario = force;
+    demoPanel.classList.remove("open");
+    // restart from welcome for full effect, OR jump to ready if we're already running
+    const activeScreen = document.querySelector(".screen.active").id;
+    if (activeScreen === "screen-welcome" || activeScreen === "screen-result" || activeScreen === "screen-band") {
+      restart();
+    }
+    // small toast
+    showToast(force === "random" ? "Próximo resultado: aleatorio" : `Próximo resultado: ${SCENARIOS[force].name}`);
+  });
+});
+
+function showToast(msg) {
+  let t = document.getElementById("__toast");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "__toast";
+    t.style.cssText = `
+      position: fixed; bottom: 80px; right: 24px;
+      background: #0f172a; color: white;
+      padding: 12px 20px; border-radius: 10px;
+      font-family: var(--mono); font-size: 11px;
+      letter-spacing: 1px; z-index: 300;
+      opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
+      transform: translateY(10px);
+      box-shadow: 0 16px 40px rgba(15,23,42,0.2);
+    `;
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  requestAnimationFrame(() => {
+    t.style.opacity = "1";
+    t.style.transform = "translateY(0)";
+  });
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => {
+    t.style.opacity = "0";
+    t.style.transform = "translateY(10px)";
+  }, 1800);
+}
+
+/* ----- keyboard shortcuts ----- */
+document.addEventListener("keydown", (e) => {
+  const map = { "1": "azul", "2": "verde", "3": "amarillo", "4": "naranja", "5": "rojo", "0": "random" };
+  if (map[e.key]) {
+    const force = map[e.key];
+    if (force === "random") forcedScenario = null;
+    else forcedScenario = force;
+    showToast(force === "random" ? "Próximo resultado: aleatorio" : `Próximo resultado: ${SCENARIOS[force].name}`);
+  }
+  if (e.key === " " || e.key === "Enter") {
+    const active = document.querySelector(".screen.active").id;
+    if (active === "screen-welcome") document.getElementById("btn-start").click();
+    else if (active === "screen-ready") document.getElementById("btn-measure").click();
+    else if (active === "screen-result") document.getElementById("btn-print").click();
+  }
+  if (e.key === "r" || e.key === "R") restart();
+});
+</script>
+</body>
+</html>
